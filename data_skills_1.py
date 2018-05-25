@@ -1,6 +1,6 @@
 import re
 from nltk.corpus import stopwords
-from goose import Goose
+from goose3 import Goose
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.common.exceptions import TimeoutException
@@ -38,7 +38,8 @@ def keywords_f(soup_obj):
     chunks = (phrase.strip() for line in lines for phrase in line.split("  ")) # break multi-headlines into a line each
     text = ''.join(chunk for chunk in chunks if chunk).encode('utf-8') # Get rid of all blank lines and ends of line
     try:
-        text = text.decode('unicode_escape').encode('ascii', 'ignore') # Need this as some websites aren't formatted
+        # text = text.decode('unicode_escape').encode('ascii', 'ignore') # Need this as some websites aren't formatted
+        text = text.decode('ascii', 'ignore')
     except:                                                          
         return                                                       
     text = re.sub("[^a-zA-Z+3]"," ", text)  
@@ -59,19 +60,23 @@ start_soup = BeautifulSoup(resp.content)
 urls = start_soup.findAll('a',{'rel':'nofollow','target':'_blank'}) #this are the links of the job posts
 urls = [link['href'] for link in urls] 
 num_found = start_soup.find(id = 'searchCount').string.encode('utf-8').split() #this returns the total number of results
-num_jobs = num_found[-1].split(',')
+num_jobs = num_found[-2].decode("utf-8").split(',')
 if len(num_jobs)>=2:
     num_jobs = int(num_jobs[0]) * 1000 + int(num_jobs[1])
 else:
     num_jobs = int(num_jobs[0])
 num_pages = num_jobs/10 #calculates how many pages needed to do the scraping
 job_keywords=[]
-print 'There are %d jobs found and we need to extract %d pages.'%(num_jobs,num_pages)
-print 'extracting first page of job searching results'
+print ('There are %d jobs found and we need to extract %d pages.'%(num_jobs,num_pages))
+print ('extracting first page of job searching results')
 # prevent the driver stopping due to the unexpectedAlertBehaviour.
 webdriver.DesiredCapabilities.FIREFOX["unexpectedAlertBehaviour"] = "accept"
 get_info = True
-driver=webdriver.Firefox()
+
+DRIVER_EXE = r"C:\Users\Andrew Yan\Documents\GitHub\data_skills\geckodriver.exe"
+
+driver=webdriver.Firefox(executable_path=DRIVER_EXE)
+
 # set a page load time limit so that don't have to wait forever if the links are broken.
 driver.set_page_load_timeout(15)
 for i in range(len(urls)):
@@ -85,20 +90,20 @@ for i in range(len(urls)):
     time.sleep(j) #waits for a random time so that the website don't consider you as a bot
     if get_info:
         soup=BeautifulSoup(driver.page_source)
-        print 'extracting %d job keywords...' % i
+        print ('extracting %d job keywords...' % i)
         single_job = keywords_f(soup)
-        print single_job,len(soup)
-        print driver.current_url
+        print (single_job,len(soup))
+        print (driver.current_url)
         job_keywords.append([driver.current_url,single_job])
     
-for k in range(1,num_pages+1):
+for k in range(1,int(num_pages)+1):
 #this 5 pages reopen the browser is to prevent connection refused error.
     if k%5==0:
         driver.quit()
-        driver=webdriver.Firefox()
+        driver=webdriver.Firefox(executable_path=DRIVER_EXE)
         driver.set_page_load_timeout(15)
     current_url = start_url + "&start=" + str(k*10)
-    print 'extracting %d page of job searching results...' % k
+    print ('extracting %d page of job searching results...' % k)
     resp = requests.get(current_url)
     current_soup = BeautifulSoup(resp.content)
     current_urls = current_soup.findAll('a',{'rel':'nofollow','target':'_blank'})
@@ -114,10 +119,10 @@ for k in range(1,num_pages+1):
         time.sleep(j) #waits for a random time
         if get_info:
             soup=BeautifulSoup(driver.page_source)
-            print 'extracting %d job keywords...' % i
+            print ('extracting %d job keywords...' % i)
             single_job = keywords_f(soup)
-            print single_job,len(soup)
-            print driver.current_url
+            print (single_job,len(soup))
+            print (driver.current_url)
             job_keywords.append([driver.current_url,single_job])
 # use driver.quit() not driver.close() can get rid of the openning too many files error.
 driver.quit()
