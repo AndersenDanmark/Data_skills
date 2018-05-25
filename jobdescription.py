@@ -11,6 +11,17 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import csv
 
+#To find elements for the following object
+# {           "_id": "uniqueID",
+#             "urlLink": "url_link",
+#             "jobTitle": "job_title",
+#             "companyName": "company_name",
+#             "location": "company_location",
+#             "jobSummary": "job_description"
+#   }
+_id=0
+_id+=1
+
 #I get these keywords from the first page search result of data scientist at indeed; they're not whole but already tell a story.
 program_languages=['bash','r','python','java','c++','ruby','perl','matlab','javascript','scala','php']
 analysis_software=['excel','tableau','d3.js','sas','spss','d3','saas','pandas','numpy','scipy','sps','spotfire','scikits.learn','splunk','powerpoint','h2o']
@@ -53,6 +64,7 @@ def keywords_f(soup_obj):
     return keywords
 
 
+
 base_url = "http://www.indeed.com"    
 #change the start_url can scrape different cities.
 start_url = "http://www.indeed.com/jobs?q=data+scientist&l=San+Francisco%2C+CA"
@@ -66,8 +78,10 @@ if len(num_jobs)>=2:
     num_jobs = int(num_jobs[0]) * 1000 + int(num_jobs[1])
 else:
     num_jobs = int(num_jobs[0])
-num_pages = num_jobs/10 #calculates how many pages needed to do the scraping
+num_pages = num_jobs/16 #calculates how many pages needed to do the scraping
+
 job_keywords=[]
+
 print ('There are %d jobs found and we need to extract %d pages.'%(num_jobs,num_pages))
 print ('extracting first page of job searching results')
 # prevent the driver stopping due to the unexpectedAlertBehaviour.
@@ -140,7 +154,15 @@ Result = pd.DataFrame()
 Result['Skill'] = dict.keys()
 Result['Count'] = dict.values()
 Result['Ranking'] = Result['Count']/float(len(job_keywords))
+Result.to_csv('San_Francisco_CA_05242018.csv',index=False)
+
+
+
+
+#To create a new CSV file for storage
 with open('C:/Users/Andrew Yan/Documents/GitHub/data_skills/San_Francisco_CA_05242018.csv', 'w') as csvfile:
     filewriter = csv.writer(csvfile, delimiter=',',
                             quotechar='|', quoting=csv.QUOTE_MINIMAL)
+    filewriter.writerow(['jobTitle', 'companyName','location','jobSummary'])
+
 Result.to_csv('San_Francisco_CA_05242018.csv',index=False)
